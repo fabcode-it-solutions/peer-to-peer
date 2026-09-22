@@ -1,0 +1,733 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model AppConfig {
+  id            String   @id @default(cuid())
+  shopDomain    String   @unique
+  apiKey        String
+  apiSecretKey  String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([shopDomain])
+  @@map("app_configs")
+}
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  locale        String?
+  accountOwner  Boolean?
+  collaborator  Boolean?
+  emailVerified Boolean?
+
+  @@index([shop])
+}
+
+model Shop {
+  id                   String                @id @default(cuid())
+  domain               String                @unique
+  name                 String?
+  email                String?
+  currency             String                @default("USD")
+  timezone             String?
+  isActive             Boolean               @default(true)
+  installedAt          DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  isExpired            Boolean               @default(false)
+  analytics            Analytics[]
+  autoAddRules         AutoAddRule[]
+  bankAccounts         BankAccount[]
+  bannerSettings       BannerSettings?
+  cards                Card[]
+  checkoutPlusRules    CheckoutPlusRule[]
+  dynamicPricingRules  DynamicPricingRule[]
+  freeGiftRules        FreeGiftRule[]
+  Invoice              Invoice[]
+  licenses             Licenses?
+  notificationSettings NotificationSettings?
+  payments             Payment[]
+  quantityBreakRules   QuantityBreakRule[]
+  settings             Settings?
+  singleUpsellRules    SingleUpsellRule[]
+  sliderRules          SliderRule[]
+  timerSettings        TimerSettings?
+  Users                Users?
+
+  @@index([domain])
+  @@index([isActive])
+  @@index([isExpired])
+}
+
+model Licenses {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  shopId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  userId    String   @unique
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([domain])
+  @@index([isActive])
+}
+
+model Users {
+  id                   String                @id @default(cuid())
+  domain               String                @unique
+  shopId               String?               @unique 
+  name                 String?
+  password             String
+  email                String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime              @default(now())
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  stripeId             String?
+  bankAccounts         BankAccount[]
+  cards                Card[]
+  licenses             Licenses?
+  notificationSettings NotificationSettings?
+  payments             Payment[]
+  role                 String?               @default("admin")
+  shop                 Shop?                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  invoices             Invoice[]
+
+  @@index([domain])
+  @@index([stripeId])
+}
+
+
+model Settings {
+  id                    String   @id @default(cuid())
+  shopId                String   @unique
+  sliderEnabled         Boolean  @default(true)
+  singleUpsellEnabled   Boolean  @default(true)
+  autoAddEnabled        Boolean  @default(true)
+  dynamicPricingEnabled Boolean  @default(true)
+  quantityBreaksEnabled Boolean  @default(true)
+  bannerEnabled         Boolean  @default(true)
+  freeGiftEnabled       Boolean  @default(true)
+  timerEnabled          Boolean  @default(false)
+  primaryColor          String   @default("#000000")
+  secondaryColor        String   @default("#ffffff")
+  accentColor           String   @default("#0066cc")
+  fontFamily            String   @default("inherit")
+  trackingEnabled       Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  checkoutPlusEnabled   Boolean  @default(true)
+  appEmbedActivated     Boolean  @default(false)
+  customCss             String?
+  shop                  Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model SliderRule {
+  id                  String          @id @default(cuid())
+  shopId              String
+  name                String
+  description         String?
+  isActive            Boolean         @default(true)
+  priority            Int             @default(0)
+  title               String          @default("You might also like")
+  titleColor          String          @default("#000000")
+  titleFontSize       Int             @default(18)
+  titleFontFamily     String          @default("inherit")
+  buttonText          String          @default("Add to Cart")
+  buttonColor         String          @default("#000000")
+  buttonTextColor     String          @default("#ffffff")
+  buttonFontSize      Int             @default(14)
+  discountType        DiscountType?
+  discountValue       Float?
+  impressions         Int             @default(0)
+  clicks              Int             @default(0)
+  conversions         Int             @default(0)
+  revenue             Float           @default(0)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  discountStatus      String?
+  discountedRevenue   Float           @default(0)
+  hasDiscount         Boolean         @default(false)
+  minimumCartValue    Float?
+  minimumQuantity     Int?
+  shopifyDiscountCode String?
+  shopifyDiscountId   String?
+  maximumCartValue    Float?
+  ruleType            String
+  triggerProductId    String[]
+  triggerVariantId    String[]
+  subTitle            String?         @default("Checkout +")
+  subTitleColor       String?         @default("#000000")
+  subTitleFontFamily  String?         @default("inherit")
+  subTitleFontSize    Int?            @default(18)
+  buttonFontFamily    String?         @default("inherit")
+  products            SliderProduct[]
+  shop                Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, isActive])
+}
+
+model SliderProduct {
+  id             String     @id @default(cuid())
+  ruleId         String
+  productId      String
+  variantId      String?
+  title          String
+  price          Float
+  compareAtPrice Float?
+  image          String?
+  position       Int        @default(0)
+  handle         String?
+  rule           SliderRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+}
+
+model SingleUpsellRule {
+  id                   String                  @id @default(cuid())
+  shopId               String
+  name                 String
+  isActive             Boolean                 @default(true)
+  priority             Int                     @default(0)
+  title                String?                 @default("Checkout +")
+  titleColor           String?                 @default("#000000")
+  titleFontSize        Int?                    @default(18)
+  buttonText           String?                 @default("Add to Cart")
+  buttonColor          String?                 @default("#000000")
+  buttonTextColor      String?                 @default("#ffffff")
+  discountType         DiscountType            @default(PERCENTAGE)
+  discountValue        Float                   @default(0)
+  impressions          Int                     @default(0)
+  clicks               Int                     @default(0)
+  conversions          Int                     @default(0)
+  revenue              Float                   @default(0)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  autoAddProductHandle String?
+  autoAddProductId     String
+  autoAddVariantId     String?
+  buttonFontFamily     String?                 @default("inherit")
+  buttonFontSize       Int?                    @default(14)
+  ruleType             String
+  subTitle             String?                 @default("Checkout +")
+  subTitleColor        String?                 @default("#000000")
+  subTitleFontFamily   String?                 @default("inherit")
+  subTitleFontSize     Int?                    @default(18)
+  titleFontFamily      String?                 @default("inherit")
+  triggerProductId     String
+  triggerVariantId     String?
+  conditions           SingleUpsellCondition[]
+  shop                 Shop                    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, isActive])
+}
+
+model SingleUpsellCondition {
+  id       String            @id @default(cuid())
+  ruleId   String
+  type     ConditionType
+  operator ConditionOperator
+  value    String
+  rule     SingleUpsellRule  @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+}
+
+model AutoAddRule {
+  id                   String       @id @default(cuid())
+  shopId               String
+  name                 String
+  isActive             Boolean      @default(true)
+  triggerProductId     String
+  triggerVariantId     String?
+  autoAddProductId     String
+  autoAddVariantId     String?
+  autoAddProductTitle  String
+  autoAddProductPrice  Float
+  customLabel          String       @default("Essential Add-on")
+  labelColor           String       @default("#000000")
+  discountType         DiscountType @default(PERCENTAGE)
+  discountValue        Float        @default(0)
+  impressions          Int          @default(0)
+  autoAdds             Int          @default(0)
+  revenue              Float        @default(0)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  quantity             Int          @default(1)
+  conditions           String
+  buttonColor          String       @default("#000000")
+  buttonFontFamily     String       @default("inherit")
+  buttonFontSize       Int          @default(14)
+  buttonText           String       @default("Add to Cart")
+  buttonTextColor      String       @default("#ffffff")
+  autoAddProductHandle String?
+  shop                 Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, isActive])
+}
+
+model DynamicPricingRule {
+  id              String                    @id @default(cuid())
+  shopId          String
+  name            String
+  isActive        Boolean                   @default(true)
+  chargeType      String                    @default("SHIPPING_PROTECTION")
+  percentageValue Float
+  minimumCharge   Float?
+  maximumCharge   Float?
+  label           String                    @default("Shipping Protection")
+  labelColor      String                    @default("#000000")
+  defaultChecked  Boolean                   @default(true)
+  impressions     Int                       @default(0)
+  accepted        Int                       @default(0)
+  revenue         Float                     @default(0)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  conditions      DynamicPricingCondition[]
+  shop            Shop                      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, isActive])
+}
+
+model DynamicPricingCondition {
+  id       String             @id @default(cuid())
+  ruleId   String
+  type     ConditionType
+  operator ConditionOperator
+  value    String
+  rule     DynamicPricingRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+}
+
+model QuantityBreakRule {
+  id                 String                   @id @default(cuid())
+  shopId             String
+  name               String
+  isActive           Boolean                  @default(true)
+  productId          String
+  variantId          String?
+  title              String                   @default("Buy More, Save More")
+  titleColor         String                   @default("#000000")
+  boxBackgroundColor String                   @default("#f5f5f5")
+  boxBorderColor     String                   @default("#e0e0e0")
+  impressions        Int                      @default(0)
+  revenue            Float                    @default(0)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  conditions         QuantityBreakCondition[]
+  shop               Shop                     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  tiers              QuantityBreakTier[]
+
+  @@index([shopId, isActive])
+}
+
+model QuantityBreakTier {
+  id            String            @id @default(cuid())
+  ruleId        String
+  quantity      Int
+  discountType  DiscountType      @default(PERCENTAGE)
+  discountValue Float
+  label         String
+  position      Int               @default(0)
+  rule          QuantityBreakRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+}
+
+model QuantityBreakCondition {
+  id       String            @id @default(cuid())
+  ruleId   String
+  type     ConditionType
+  operator ConditionOperator
+  value    String
+  rule     QuantityBreakRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+}
+
+model BannerSettings {
+  id          String   @id @default(cuid())
+  shopId      String   @unique
+  isActive    Boolean  @default(false)
+  imageUrl    String?
+  linkUrl     String?
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model FreeGiftRule {
+  id               String              @id @default(cuid())
+  shopId           String
+  name             String
+  isActive         Boolean             @default(true)
+  triggerProductId String
+  triggerVariantId String?
+  giftProductId    String
+  giftVariantId    String?
+  giftProductTitle String
+  label            String              @default("FREE GIFT")
+  labelColor       String              @default("#00cc00")
+  impressions      Int                 @default(0)
+  giftsAdded       Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  conditions       FreeGiftCondition[]
+  shop             Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, isActive])
+}
+
+model FreeGiftCondition {
+  id       String            @id @default(cuid())
+  ruleId   String
+  type     ConditionType
+  operator ConditionOperator
+  value    String
+  rule     FreeGiftRule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+}
+
+model TimerSettings {
+  id              String   @id @default(cuid())
+  shopId          String   @unique
+  isActive        Boolean  @default(false)
+  duration        Int      @default(900)
+  message         String   @default("Complete checkout in {time} to secure your order")
+  messageColor    String   @default("#000000")
+  timerColor      String   @default("#ff0000")
+  backgroundColor String   @default("#fff3cd")
+  impressions     Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model Analytics {
+  id          String             @id @default(cuid())
+  shopId      String
+  eventType   AnalyticsEventType
+  featureType FeatureType
+  ruleId      String?
+  ruleName    String?
+  productId   String?
+  variantId   String?
+  revenue     Float              @default(0)
+  quantity    Int                @default(1)
+  sessionId   String?
+  cartToken   String?
+  metadata    Json?
+  timestamp   DateTime           @default(now())
+  date        DateTime           @default(now()) @db.Date
+  shop        Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, date])
+  @@index([featureType])
+  @@index([eventType])
+}
+
+model CheckoutPlusRule {
+  id                 String                 @id @default(cuid())
+  shopId             String
+  name               String
+  shopifyProductId   String
+  isActive           Boolean                @default(true)
+  impressions        Int                    @default(0)
+  autoAdds           Int                    @default(0)
+  revenue            Float                  @default(0)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  buttonColor        String                 @default("#000000")
+  buttonFontSize     Int                    @default(14)
+  buttonText         String                 @default("Checkout +")
+  buttonTextColor    String                 @default("#ffffff")
+  title              String                 @default("Checkout +")
+  titleColor         String                 @default("#000000")
+  titleFontFamily    String                 @default("'Inter', sans-serif")
+  titleFontSize      Int                    @default(13)
+  buttonFontFamily   String                 @default("'Inter', sans-serif")
+  subTitle           String                 @default("Get Delivery Protection and sustainable Shipping")
+  subTitleColor      String                 @default("#5c5f62")
+  subTitleFontFamily String                 @default("'Inter', sans-serif")
+  subTitleFontSize   Int                    @default(11)
+  cwbTitle           String                 @default("Continue Without Checkout+")
+  cwbTitleColor      String                 @default("#000")
+  cwbTitleFontFamily String                 @default("'Inter', sans-serif")
+  cwbTitleFontSize   Int                    @default(13)
+  shop               Shop                   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  description        String?  
+  rules              CheckoutPlusRuleItem[]
+
+  @@index([shopId, isActive])
+  @@index([shopifyProductId])
+}
+
+model CheckoutPlusRuleItem {
+  id               String           @id @default(cuid())
+  ruleId           String
+  minPrice         Float
+  maxPrice         Float
+  charge           Float
+  variantTitle     String
+  shopifyVariantId String
+  position         Int              @default(0)
+  timesAdded       Int              @default(0)
+  revenue          Float            @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  rule             CheckoutPlusRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@index([shopifyVariantId])
+  @@index([minPrice, maxPrice])
+}
+
+model BankAccount {
+  id                  String          @id @default(cuid())
+  userId              String
+  shopId              String
+  bankName            String
+  accountHolderName   String
+  accountNumber       String
+  routingNumber       String?
+  accountType         BankAccountType @default(CHECKING)
+  stripeBankAccountId String?         @unique
+  stripeCustomerId    String?
+  isVerified          Boolean         @default(false)
+  isPrimary           Boolean         @default(false)
+  isActive            Boolean         @default(true)
+  nickname            String?
+  country             String          @default("US")
+  currency            String          @default("USD")
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  shop                Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user                Users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripeBankAccountId])
+  @@index([isPrimary])
+  @@index([shopId])
+}
+
+model Card {
+  id                    String    @id @default(cuid())
+  userId                String
+  shopId                String
+  cardType              CardType
+  brand                 CardBrand
+  last4                 String
+  expiryMonth           Int
+  expiryYear            Int
+  cardholderName        String
+  stripeCardId          String?   @unique
+  stripeCustomerId      String?
+  stripePaymentMethodId String?   @unique
+  isExpired             Boolean   @default(false)
+  isPrimary             Boolean   @default(false)
+  isActive              Boolean   @default(true)
+  nickname              String?
+  billingAddress        Json?
+  cvcCheck              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  lastUsedAt            DateTime?
+  shop                  Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user                  Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripeCardId])
+  @@index([stripePaymentMethodId])
+  @@index([isPrimary])
+  @@index([isExpired])
+  @@index([shopId])
+}
+
+model NotificationSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  shopId        String   @unique
+  emailEnabled  Boolean  @default(true)
+  weeklyReports Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user          Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shopId])
+}
+
+model Payment {
+  id                    String            @id @default(cuid())
+  userId                String
+  shopId                String
+  amount                Float
+  currency              String            @default("USD")
+  status                PaymentStatus     @default(PENDING)
+  stripePaymentIntentId String?           @unique
+  stripeChargeId        String?           @unique
+  stripeInvoiceId       String?           @unique
+  stripeSubscriptionId  String?
+  paymentMethod         PaymentMethodType
+  cardLast4             String?
+  bankLast4             String?
+  description           String?
+  receiptUrl            String?
+  invoiceUrl            String?
+  refunded              Boolean           @default(false)
+  refundAmount          Float?
+  refundReason          String?
+  refundedAt            DateTime?
+  metadata              Json?
+  failureReason         String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  paidAt                DateTime?
+  shop                  Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user                  Users             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+  @@index([stripeChargeId])
+  @@index([stripeInvoiceId])
+  @@index([createdAt])
+  @@index([paidAt])
+  @@index([shopId])
+}
+
+model Invoice {
+  id                 String   @id @default(cuid())
+  shopId             String?
+  userId             String?
+  email              String
+  amount             Float
+  note               String?
+  status             String   @default("pending")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  hosted_invoice_url String?
+
+  shop  Shop?  @relation(fields: [shopId], references: [id])
+  user  Users? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([email])
+  @@index([shopId])
+  @@index([status])
+  @@index([userId])
+}
+
+enum BankAccountType {
+  CHECKING
+  SAVINGS
+  BUSINESS_CHECKING
+  BUSINESS_SAVINGS
+}
+
+enum CardType {
+  CREDIT
+  DEBIT
+}
+
+enum CardBrand {
+  VISA
+  MASTERCARD
+  AMEX
+  DISCOVER
+  DINERS
+  JCB
+  UNIONPAY
+  UNKNOWN
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethodType {
+  CARD
+  BANK_ACCOUNT
+  ACH
+  WIRE_TRANSFER
+  OTHER
+}
+
+enum WeeklyReportDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum ConditionType {
+  CART_VALUE
+  PRODUCT_IN_CART
+  PRODUCT_QUANTITY
+  CART_ITEM_COUNT
+}
+
+enum ConditionOperator {
+  EQUALS
+  NOT_EQUALS
+  GREATER_THAN
+  GREATER_THAN_OR_EQUAL
+  LESS_THAN
+  LESS_THAN_OR_EQUAL
+  CONTAINS
+  IN
+}
+
+enum AnalyticsEventType {
+  IMPRESSION
+  CLICK
+  ADD_TO_CART
+  CONVERSION
+}
+
+enum FeatureType {
+  SLIDER_UPSELL
+  SINGLE_UPSELL
+  AUTO_ADD
+  DYNAMIC_PRICING
+  QUANTITY_BREAK
+  BANNER
+  FREE_GIFT
+  COUNTDOWN_TIMER
+  CHECKOUT_PLUS
+}
