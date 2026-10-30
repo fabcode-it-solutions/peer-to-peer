@@ -33,7 +33,6 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
 
 # vercel
 .vercel
@@ -45,6 +44,6 @@ next-env.d.ts
 temp_auto_push.bat
 *.bat
 temp_interactive_push.bat
-.env
 branch_structure.json
 .gitignore
+config.bat

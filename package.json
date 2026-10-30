@@ -7,22 +7,23 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "scripts": {
-    "dev": "node api.js && next dev",
-    "build": "node api.js && next build",
+    "dev": "node init && next dev",
+    "build": "node init && next build",
     "pro-build": "NODE_OPTIONS=\"--max_old_space_size=4096\" npm run build",
-    "start": "node api.js && next start",
+    "start": "node init && next start",
     "lint": "eslint",
     "postinstall": "npx prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^6.16.2",
     "@prisma/client": "^6.16.2",
-    "node-fetch": "^3.3.2",
     "@prisma/config": "^6.16.2",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^8.2.0",
     "lucide-react": "^0.555.0",
     "next": "16.0.10",
     "next-auth": "^4.24.13",
+    "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
