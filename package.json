@@ -7,10 +7,10 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "scripts": {
-    "dev": "node api.js && next dev",
-    "build": "node api.js && next build",
+    "dev": "next dev",
+    "build": "next build",
     "pro-build": "NODE_OPTIONS=\"--max_old_space_size=4096\" npm run build",
-    "start": "node api.js && next start",
+    "start": "next start",
     "lint": "eslint",
     "postinstall": "npx prisma generate"
   },
